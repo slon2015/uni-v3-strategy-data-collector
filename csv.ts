@@ -13,10 +13,10 @@ async function main() {
   const provider = new ethers.providers.JsonRpcProvider(conf.rpcUrl);
 
   const sampleCount = env.get("SAMPLES_COUNT").required().asIntPositive();
-  const sampleDistance = env
-    .get("SAMPLES_DISTANCE")
-    .default(ONE_DAY_DISTANCE * 3)
-    .asIntPositive();
+  const sampleDistance = Math.floor(
+    ONE_DAY_DISTANCE *
+      env.get("SAMPLES_DISTANCE_IN_DAYS").default(3).asFloatPositive()
+  );
 
   const blockNumber = await provider.getBlockNumber();
 

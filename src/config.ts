@@ -10,16 +10,19 @@ type Config = {
   decimals1: number;
 };
 
-const DEFAULT_STEP = Math.floor((24 * 60 * 60) / 14);
+const ONE_DAY = Math.floor((24 * 60 * 60) / 14);
 const DEFAULT_INTERVALS = 14;
 
 export function config(): Config {
   return {
     rpcUrl: env.get("RPC_URL").required().asUrlString(),
     poolAddress: env.get("POOL_ADDRESS").required().asString(),
-    step: env.get("SAMPLER_STEP").default(DEFAULT_STEP).asIntPositive(),
+    step: Math.floor(
+      ONE_DAY *
+        env.get("RSI_INTERVAL_STEP_IN_DAYS").default(1).asFloatPositive()
+    ),
     intervals: env
-      .get("RSI_INTERVALS")
+      .get("RSI_INTERVAL_COUNT")
       .default(DEFAULT_INTERVALS)
       .asIntPositive(),
     decimals0: env.get("DECIMALS0").required().asIntPositive(),

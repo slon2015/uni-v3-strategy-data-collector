@@ -1,6 +1,5 @@
 import { ethers } from "ethers";
 import { fetchObservation } from "./oracle";
-import { tickToPrice } from "./ticks";
 import Big from "big.js";
 
 export type RsiInput = {
@@ -56,7 +55,7 @@ export function calculateRsi(input: RsiInput): RsiOutput {
   const avgProfit = profits.reduce((acc, p) => acc + p, 0) / profits.length;
   const avgLosses = losses.reduce((acc, l) => acc + l, 0) / losses.length;
 
-  const rs = avgProfit / isNaN(avgLosses) || avgLosses === 0 ? 1 : avgLosses;
+  const rs = avgProfit / avgLosses;
 
   return {
     rsi: Math.floor(100 - 100 / (1 + rs)),
