@@ -1,0 +1,17 @@
+{
+  "name": "uni-v3-strategy-data-collector",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@uniswap/v3-sdk": "^3.10.0",
+    "big.js": "^6.2.1",
+    "dotenv": "^16.3.1",
+    "env-var": "^7.4.1",
+    "ethers": "^5.6.0"
+  },
+  "devDependencies": {
+    "@types/big.js": "^6.2.0"
+  }
+}
