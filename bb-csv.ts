@@ -1,12 +1,11 @@
 import { ethers } from "ethers";
-import { config } from "./src/config";
-import { RsiFetcher } from "./src/parsers/rsi";
-
 import env from "env-var";
 import Big from "big.js";
-import { fetchObservation } from "./src/oracle";
+
+import { config } from "./src/config";
 import { PoolService, PriceService, initDataSource } from "./src/persistence";
 import { DataProvider } from "./src/data-provider";
+import { BollingerBandsFetcher } from "./src/parsers/bollinger";
 
 const ONE_DAY_DISTANCE = Math.floor((24 * 60 * 60) / 14);
 
@@ -25,7 +24,7 @@ async function main() {
   const prices = new PriceService();
   const poolService = new PoolService();
   const dataProvider = new DataProvider(provider, prices);
-  const rsiFetcher = new RsiFetcher();
+  const bbFetcher = new BollingerBandsFetcher();
 
   const pool = {
     chainId,
@@ -45,7 +44,7 @@ async function main() {
   const blockNumber = await provider.getBlockNumber();
 
   console.log(
-    `block_number;rsi;price0;${new Array(6)
+    `block_number;sma;std;bb_lower;bb_upper;price0;${new Array(6)
       .fill(0)
       .map((_, i) => `price${i + 1}`)
       .join(";")};${new Array(6)
@@ -58,22 +57,24 @@ async function main() {
     const sampleBlockNumber =
       blockNumber - index * sampleDistance - 6 * ONE_DAY_DISTANCE;
 
-    const requirements = rsiFetcher.getDataRequirements(
+    const requirements = bbFetcher.getDataRequirements(
       pool,
-      blockNumber,
-      conf.intervals,
-      conf.step
+      sampleBlockNumber,
+      conf.bollingerBands.intervals,
+      conf.bollingerBands.step
     );
 
     const data = await dataProvider.provide(requirements, pool);
 
-    const { rsi, currentPrice } = await rsiFetcher.calculate(
-      data,
-      pool,
-      blockNumber,
-      conf.intervals,
-      conf.step
-    );
+    const { sma, upperBorder, lowerBorder, currentPrice, std } =
+      await bbFetcher.calculate(
+        data,
+        pool,
+        sampleBlockNumber,
+        conf.bollingerBands.intervals,
+        conf.bollingerBands.step,
+        conf.bollingerBands.stdDevCount
+      );
 
     const nextPricesMap = await dataProvider.provide(
       {
@@ -84,16 +85,11 @@ async function main() {
       pool
     );
 
-    const nextPrices = (
-      await Promise.all(
-        new Array(6)
-          .fill(0)
-          .map(
-            (_, i) =>
-              nextPricesMap[sampleBlockNumber + (1 + i) * ONE_DAY_DISTANCE]
-          )
-      )
-    ).map((p) => p.div(Big(10).pow(conf.decimals1 - conf.decimals0)));
+    const nextPrices = new Array(6)
+      .fill(0)
+      .map(
+        (_, i) => nextPricesMap[sampleBlockNumber + (1 + i) * ONE_DAY_DISTANCE]
+      );
 
     const allPrices = [currentPrice].concat(nextPrices);
 
@@ -109,7 +105,7 @@ async function main() {
     }
 
     console.log(
-      `${sampleBlockNumber};${rsi};${currentPrice.toFixed()};${nextPrices
+      `${sampleBlockNumber};${sma.toFixed()};${std.toFixed()};${lowerBorder.toFixed()};${upperBorder.toFixed()};${currentPrice.toFixed()};${nextPrices
         .map((p) => p.toFixed())
         .join(";")};${divs.join(";")}`
     );
