@@ -35,8 +35,8 @@ async function main() {
   const requirements = smaFetcher.getDataRequirements(
     pool,
     blockNumber,
-    conf.intervals,
-    conf.step
+    conf.rsi.intervals,
+    conf.rsi.step
   );
 
   const data = await dataProvider.provide(requirements, pool);
@@ -45,8 +45,8 @@ async function main() {
     data,
     pool,
     blockNumber,
-    conf.intervals,
-    conf.step
+    conf.rsi.intervals,
+    conf.rsi.step
   );
 
   console.log(`RSI: ${result.rsi}%`);

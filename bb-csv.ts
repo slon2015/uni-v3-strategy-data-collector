@@ -1,6 +1,5 @@
 import { ethers } from "ethers";
 import env from "env-var";
-import Big from "big.js";
 
 import { config } from "./src/config";
 import { PoolService, PriceService, initDataSource } from "./src/persistence";

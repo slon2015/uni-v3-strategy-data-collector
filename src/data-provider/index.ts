@@ -6,7 +6,7 @@ import {
   PriceService,
   ResolvedPriceData,
 } from "../persistence";
-import { fetchObservation } from "../oracle";
+import { fetchObservation } from "../chain/oracle";
 import { BlockNumber, NewPoolDto } from "../persistence/types";
 import { RequiredPricePoints } from "../fetchers";
 
