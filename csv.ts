@@ -1,10 +1,12 @@
 import { ethers } from "ethers";
 import { config } from "./src/config";
-import { calculateRsi, collectRsiInput } from "./src/rsi";
+import { RsiFetcher } from "./src/parsers/rsi";
 
 import env from "env-var";
 import Big from "big.js";
 import { fetchObservation } from "./src/oracle";
+import { PoolService, PriceService, initDataSource } from "./src/persistence";
+import { DataProvider } from "./src/data-provider";
 
 const ONE_DAY_DISTANCE = Math.floor((24 * 60 * 60) / 14);
 
@@ -17,6 +19,28 @@ async function main() {
     ONE_DAY_DISTANCE *
       env.get("SAMPLES_DISTANCE_IN_DAYS").default(3).asFloatPositive()
   );
+
+  const chainId = (await provider.getNetwork()).chainId;
+
+  const prices = new PriceService();
+  const poolService = new PoolService();
+  const dataProvider = new DataProvider(provider, prices);
+  const rsiFetcher = new RsiFetcher();
+
+  const pool = {
+    chainId,
+    address: conf.poolAddress,
+    token0: {
+      decimals: conf.decimals0,
+    },
+    token1: {
+      decimals: conf.decimals1,
+    },
+  };
+
+  await initDataSource();
+
+  await poolService.saveNewPool(pool);
 
   const blockNumber = await provider.getBlockNumber();
 
@@ -34,30 +58,39 @@ async function main() {
     const sampleBlockNumber =
       blockNumber - index * sampleDistance - 6 * ONE_DAY_DISTANCE;
 
-    const input = await collectRsiInput(
-      provider,
-      sampleBlockNumber,
-      conf.poolAddress,
+    const requirements = rsiFetcher.getDataRequirements(
+      pool,
+      blockNumber,
       conf.intervals,
-      conf.step,
-      conf.decimals0,
-      conf.decimals1
+      conf.step
     );
 
-    const currentPrice = input.prevObservations[0];
+    const data = await dataProvider.provide(requirements, pool);
 
-    const { rsi } = calculateRsi(input);
+    const { rsi, currentPrice } = await rsiFetcher.calculate(
+      data,
+      pool,
+      blockNumber,
+      conf.intervals,
+      conf.step
+    );
+
+    const nextPricesMap = await dataProvider.provide(
+      {
+        blockNumbers: new Array(6)
+          .fill(0)
+          .map((_, i) => sampleBlockNumber + (1 + i) * ONE_DAY_DISTANCE),
+      },
+      pool
+    );
 
     const nextPrices = (
       await Promise.all(
         new Array(6)
           .fill(0)
-          .map((_, i) =>
-            fetchObservation(
-              provider,
-              sampleBlockNumber + (1 + i) * ONE_DAY_DISTANCE,
-              conf.poolAddress
-            )
+          .map(
+            (_, i) =>
+              nextPricesMap[sampleBlockNumber + (1 + i) * ONE_DAY_DISTANCE]
           )
       )
     ).map((p) => p.div(Big(10).pow(conf.decimals1 - conf.decimals0)));

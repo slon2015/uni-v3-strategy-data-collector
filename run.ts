@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import { config } from "./src/config";
-import { RsiFetcher } from "./src/rsi";
+import { RsiFetcher } from "./src/parsers/rsi";
 import { PoolService, PriceService, initDataSource } from "./src/persistence";
 import { DataProvider } from "./src/data-provider";
 
@@ -29,10 +29,10 @@ async function main() {
 
   await poolService.saveNewPool(pool);
 
-  const rsiFetcher = new RsiFetcher();
+  const smaFetcher = new RsiFetcher();
   const blockNumber = conf.blockNumber || (await provider.getBlockNumber());
 
-  const requirements = rsiFetcher.getDataRequirements(
+  const requirements = smaFetcher.getDataRequirements(
     pool,
     blockNumber,
     conf.intervals,
@@ -41,7 +41,7 @@ async function main() {
 
   const data = await dataProvider.provide(requirements, pool);
 
-  const result = await rsiFetcher.calculate(
+  const result = await smaFetcher.calculate(
     data,
     pool,
     blockNumber,

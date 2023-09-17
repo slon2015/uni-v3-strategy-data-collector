@@ -1,5 +1,5 @@
-import { IFetcher, RequiredPricePoints } from "./fetchers";
-import { NewPoolDto, BlockNumber, ResolvedPriceData } from "./persistence";
+import { CommonResult, IFetcher, RequiredPricePoints } from "../fetchers";
+import { NewPoolDto, BlockNumber, ResolvedPriceData } from "../persistence";
 
 export type RsiOutput = {
   rsi: number;
@@ -31,7 +31,7 @@ export class RsiFetcher implements IFetcher<RsiArgs, RsiOutput> {
     blockNumber: BlockNumber,
     intervalsCount: number,
     step: number
-  ): Promise<RsiOutput> {
+  ): Promise<RsiOutput & CommonResult> {
     const prevObservations = new Array(intervalsCount)
       .fill(0)
       .map((_, i) => blockNumber - step * i)
@@ -60,6 +60,7 @@ export class RsiFetcher implements IFetcher<RsiArgs, RsiOutput> {
 
     return {
       rsi: Math.floor(100 - 100 / (1 + rs)),
+      currentPrice: prevObservations[0],
     };
   }
 }

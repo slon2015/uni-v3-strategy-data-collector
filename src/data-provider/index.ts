@@ -1,4 +1,6 @@
 import { providers } from "ethers";
+import Big from "big.js";
+
 import {
   PriceDataLocations,
   PriceService,
@@ -6,7 +8,6 @@ import {
 } from "../persistence";
 import { fetchObservation } from "../oracle";
 import { BlockNumber, NewPoolDto } from "../persistence/types";
-import Big from "big.js";
 import { RequiredPricePoints } from "../fetchers";
 
 export class DataProvider {
@@ -22,10 +23,14 @@ export class DataProvider {
   }
 
   async provide(
-    requirements: RequiredPricePoints,
+    requirements: Pick<RequiredPricePoints, "blockNumbers">,
     { chainId, address, token0, token1 }: NewPoolDto
   ): Promise<ResolvedPriceData> {
-    const locations = await this.resolveLocations(requirements);
+    const locations = await this.resolveLocations({
+      ...requirements,
+      chainId,
+      poolAddress: address,
+    });
 
     const cachedPriceIds = Object.entries(locations)
       .filter(([_, source]) => source === "cache")

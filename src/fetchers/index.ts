@@ -1,2 +1,2 @@
-export { RequiredPricePoints } from "./types";
+export { RequiredPricePoints, CommonResult } from "./types";
 export { IFetcher } from "./interface";

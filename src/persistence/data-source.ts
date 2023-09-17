@@ -5,7 +5,7 @@ export const appDataSource = new DataSource({
   type: "sqlite",
   database: "cached_data.db",
   synchronize: true,
-  logging: true,
+  logging: process.env.NODE_ENV === "development" || false,
   entities: [Pool, Price],
   subscribers: [],
   migrations: [],

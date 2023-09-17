@@ -5,3 +5,7 @@ export type RequiredPricePoints = {
   poolAddress: string;
   blockNumbers: Array<BlockNumber>;
 };
+
+export type CommonResult = {
+  currentPrice: Big;
+};
